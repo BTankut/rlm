@@ -2,7 +2,7 @@
 
 Process extremely long contexts (10M+ tokens) via iterative REPL execution.
 
-Based on the approach from [Zhang et al. (2025)](https://arxiv.org/abs/2502.07413) - instead of passing entire contexts to an LLM, RLM provides a REPL environment where the LLM can iteratively execute Python code to explore, analyze, and query the context programmatically.
+Based on the approach from [Zhang et al. (2025)](https://arxiv.org/abs/2512.24601) - instead of passing entire contexts to an LLM, RLM provides a REPL environment where the LLM can iteratively execute Python code to explore, analyze, and query the context programmatically.
 
 ## How It Works
 
@@ -137,7 +137,7 @@ pytest --cov=rlm tests/
 
 ## References
 
-- [Scaling Large Language Model Agents to Process 10M-Token-Long Contexts](https://arxiv.org/abs/2502.07413) - Zhang et al. (2025)
+- [Recursive Language Models](https://arxiv.org/abs/2512.24601) - Zhang et al. (2025)
 
 ## License
 
