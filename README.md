@@ -1,6 +1,6 @@
 # RLM - Recursive Language Models
 
-Process extremely long contexts (10M+ tokens) via iterative REPL execution.
+Process long contexts (100K+ chars, tested up to 1M+ chars; LLM dependent) via iterative REPL execution.
 
 Based on the approach from [Zhang et al. (2025)](https://arxiv.org/abs/2512.24601) - instead of passing entire contexts to an LLM, RLM provides a REPL environment where the LLM can iteratively execute Python code to explore, analyze, and query the context programmatically.
 
@@ -78,6 +78,7 @@ python cli.py query -q "Summarize this" -f doc.txt --model qwen3:8b
 # Run benchmarks
 python cli.py benchmark --name s_niah --sizes 8k,16k,32k
 python cli.py benchmark --name oolong --sizes 50k,100k
+python cli.py benchmark --name code_qa
 ```
 
 ## Configuration
@@ -91,39 +92,57 @@ Create a `.env` file (see `.env.example`):
 | SUB_MODEL | (same as ROOT_MODEL) | Model for sub-calls |
 | MAX_ITERATIONS | 20 | Loop safety limit |
 | MAX_OUTPUT_CHARS | 10000 | Truncation limit |
+| MAX_CONTEXT_CHARS_DISPLAY | 500 | Context preview size |
 | EXECUTION_TIMEOUT | 30 | Code timeout (seconds) |
 | ENABLE_SUB_CALLS | true | Enable llm_query() for sub-calls |
+| MAX_SUB_CALLS | 100 | Sub-call limit |
+| SUB_CALL_WARNING_THRESHOLD | 50 | Warning threshold for sub-calls |
+| MAX_SUB_CALL_CHARS | 500000 | Max chars per sub-call |
+| TEMPERATURE | 0.7 | Sampling temperature |
 | DEBUG | false | Verbose logging |
+| USE_SANDBOX | false | Use RestrictedPython sandbox |
+| SANDBOX_USE_RESTRICTED_PYTHON | true | Use RestrictedPython if available |
+| MAX_LLM_RETRIES | 3 | LLM retry attempts |
+| RETRY_BACKOFF_BASE | 2.0 | Backoff base for retries |
+| MAX_EXECUTION_RETRIES | 3 | Max execution retry attempts |
 
 ## Project Structure
 
 ```
-rlm/
-├── rlm.py              # Main orchestrator
-├── config.py           # Environment configuration
-├── core/
-│   ├── executor.py     # Code execution with timeout
-│   ├── parser.py       # Extract code blocks and FINAL()
-│   ├── state.py        # REPL state management
-│   ├── sandbox.py      # Optional sandboxing
-│   └── tracking.py     # Usage statistics
-└── llm/
-    ├── client.py       # Ollama client
-    ├── async_client.py # Async client for parallel calls
-    └── prompts.py      # System prompts
+.
+├── cli.py               # CLI entry point
+├── main.py              # Demo runner
+├── benchmarks/          # Benchmarks (s_niah, oolong, code_qa)
+├── tests/               # Unit + slow integration tests
+└── rlm/
+    ├── config.py        # Environment configuration
+    ├── rlm.py           # Main orchestrator
+    ├── core/
+    │   ├── executor.py  # Code execution with timeout
+    │   ├── sandbox.py   # Optional sandboxing
+    │   ├── parser.py    # Extract code blocks and FINAL()
+    │   ├── state.py     # REPL state management
+    │   ├── tracking.py  # Usage statistics
+    │   ├── cache.py     # LLM response cache
+    │   └── logging.py   # Structured logging
+    └── llm/
+        ├── client.py        # Ollama client
+        ├── async_client.py  # Async client for parallel calls
+        └── prompts.py       # System prompts
 ```
 
 ## Testing
 
 ```bash
-# Fast unit tests only
+# Fast tests only (no LLM calls)
 pytest -m "not slow" tests/
 
-# All tests (requires Ollama)
-pytest tests/
+# Slow tests (requires Ollama, can take minutes)
+pytest -m "slow" tests/
 
 # Specific test
 pytest tests/test_rlm.py::TestRLMNeedleInHaystack::test_needle_100k -v
+pytest tests/test_1m_context.py::TestMillionCharContext::test_1m_context_handling -v
 
 # With coverage
 pytest --cov=rlm tests/
