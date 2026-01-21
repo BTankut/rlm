@@ -1,8 +1,8 @@
 # RLM - Recursive Language Models
 
-Process long contexts (100K+ chars, tested up to 1M+ chars; LLM dependent) via iterative REPL execution.
+**Paper-aligned minimal implementation** of the RLM approach from [Zhang et al. (2025)](https://arxiv.org/abs/2512.24601).
 
-Based on the approach from [Zhang et al. (2025)](https://arxiv.org/abs/2512.24601) - instead of passing entire contexts to an LLM, RLM provides a REPL environment where the LLM can iteratively execute Python code to explore, analyze, and query the context programmatically.
+Process long contexts (100K+ chars, tested up to 1M+) via iterative REPL execution.
 
 ## How It Works
 
@@ -33,7 +33,7 @@ import re
 m = re.search(r'\[SECRET: (\w+)\]', context)
 print(m.group(1))
 
-# Or chunk and analyze large contexts
+# Or chunk and analyze large contexts with sub-LLM calls
 chunks = [context[i:i+100000] for i in range(0, len(context), 100000)]
 results = [llm_query(f"Summarize: {chunk}") for chunk in chunks]
 ```
@@ -78,6 +78,7 @@ python cli.py query -q "Summarize this" -f doc.txt --model qwen3:8b
 # Run benchmarks
 python cli.py benchmark --name s_niah --sizes 8k,16k,32k
 python cli.py benchmark --name oolong --sizes 50k,100k
+python cli.py benchmark --name oolong_pairs --tasks 1,2,3
 python cli.py benchmark --name code_qa
 ```
 
@@ -92,19 +93,12 @@ Create a `.env` file (see `.env.example`):
 | SUB_MODEL | (same as ROOT_MODEL) | Model for sub-calls |
 | MAX_ITERATIONS | 20 | Loop safety limit |
 | MAX_OUTPUT_CHARS | 10000 | Truncation limit |
-| MAX_CONTEXT_CHARS_DISPLAY | 500 | Context preview size |
 | EXECUTION_TIMEOUT | 30 | Code timeout (seconds) |
 | ENABLE_SUB_CALLS | true | Enable llm_query() for sub-calls |
 | MAX_SUB_CALLS | 100 | Sub-call limit |
-| SUB_CALL_WARNING_THRESHOLD | 50 | Warning threshold for sub-calls |
 | MAX_SUB_CALL_CHARS | 500000 | Max chars per sub-call |
 | TEMPERATURE | 0.7 | Sampling temperature |
 | DEBUG | false | Verbose logging |
-| USE_SANDBOX | false | Use RestrictedPython sandbox |
-| SANDBOX_USE_RESTRICTED_PYTHON | true | Use RestrictedPython if available |
-| MAX_LLM_RETRIES | 3 | LLM retry attempts |
-| RETRY_BACKOFF_BASE | 2.0 | Backoff base for retries |
-| MAX_EXECUTION_RETRIES | 3 | Max execution retry attempts |
 
 ## Project Structure
 
@@ -112,24 +106,37 @@ Create a `.env` file (see `.env.example`):
 .
 ├── cli.py               # CLI entry point
 ├── main.py              # Demo runner
-├── benchmarks/          # Benchmarks (s_niah, oolong, code_qa)
-├── tests/               # Unit + slow integration tests
+├── benchmarks/          # Benchmarks
+│   ├── s_niah.py        # Single Needle in a Haystack
+│   ├── oolong.py        # OOLONG benchmark
+│   ├── oolong_pairs.py  # OOLONG-Pairs (paper-aligned, 20 tasks)
+│   └── code_qa.py       # Code Q&A benchmark
+├── tests/               # Unit + integration tests
 └── rlm/
     ├── config.py        # Environment configuration
-    ├── rlm.py           # Main orchestrator
+    ├── rlm.py           # Main orchestrator (paper-aligned)
     ├── core/
     │   ├── executor.py  # Code execution with timeout
-    │   ├── sandbox.py   # Optional sandboxing
     │   ├── parser.py    # Extract code blocks and FINAL()
     │   ├── state.py     # REPL state management
-    │   ├── tracking.py  # Usage statistics
-    │   ├── cache.py     # LLM response cache
-    │   └── logging.py   # Structured logging
+    │   └── tracking.py  # Usage statistics
     └── llm/
-        ├── client.py        # Ollama client
-        ├── async_client.py  # Async client for parallel calls
-        └── prompts.py       # System prompts
+        ├── client.py    # Ollama client
+        └── prompts.py   # System prompts (paper-aligned, Appendix D)
 ```
+
+## Paper-Aligned Implementation
+
+This implementation follows the paper exactly:
+
+1. **System Prompts**: Copied verbatim from Appendix D (sec3-methods.tex)
+   - RLM with REPL (sub-calls): Lines 5-77
+   - RLM with REPL (no sub-calls): Lines 89-142
+   - Qwen diff for sub-call warning: Lines 79-86
+
+2. **Placeholders**: `{context_type}`, `{context_total_length}`, `{context_lengths}`
+
+3. **OOLONG-Pairs Benchmark**: All 20 tasks from Appendix E.1 (sec4-benchmarks.tex)
 
 ## Testing
 
@@ -137,12 +144,13 @@ Create a `.env` file (see `.env.example`):
 # Fast tests only (no LLM calls)
 pytest -m "not slow" tests/
 
-# Slow tests (requires Ollama, can take minutes)
+# Slow tests (requires Ollama)
 pytest -m "slow" tests/
 
 # Specific test
 pytest tests/test_rlm.py::TestRLMNeedleInHaystack::test_needle_100k -v
 pytest tests/test_1m_context.py::TestMillionCharContext::test_1m_context_handling -v
+pytest tests/test_oolong_pairs.py -v
 
 # With coverage
 pytest --cov=rlm tests/
@@ -157,6 +165,7 @@ pytest --cov=rlm tests/
 ## References
 
 - [Recursive Language Models](https://arxiv.org/abs/2512.24601) - Zhang et al. (2025)
+- Paper PDF included: `paper.pdf`
 
 ## License
 

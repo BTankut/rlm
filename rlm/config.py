@@ -1,4 +1,4 @@
-"""RLM Configuration"""
+"""RLM Configuration (Paper-aligned minimal)"""
 
 import os
 from dataclasses import dataclass, field
@@ -9,7 +9,7 @@ load_dotenv()
 
 @dataclass
 class Config:
-    """RLM Configuration settings"""
+    """RLM Configuration settings (paper-aligned minimal)"""
 
     # Ollama settings
     ollama_base_url: str = field(
@@ -31,14 +31,11 @@ class Config:
     max_output_chars: int = field(
         default_factory=lambda: int(os.getenv("MAX_OUTPUT_CHARS", "10000"))
     )
-    max_context_chars_display: int = field(
-        default_factory=lambda: int(os.getenv("MAX_CONTEXT_CHARS_DISPLAY", "500"))
-    )
     execution_timeout: int = field(
         default_factory=lambda: int(os.getenv("EXECUTION_TIMEOUT", "30"))
     )
 
-    # Sub-call settings (Phase 2)
+    # Sub-call settings
     max_sub_calls: int = field(
         default_factory=lambda: int(os.getenv("MAX_SUB_CALLS", "100"))
     )
@@ -62,25 +59,6 @@ class Config:
     # Debug
     debug: bool = field(
         default_factory=lambda: os.getenv("DEBUG", "false").lower() == "true"
-    )
-
-    # Sandbox settings (Phase 3)
-    use_sandbox: bool = field(
-        default_factory=lambda: os.getenv("USE_SANDBOX", "false").lower() == "true"
-    )
-    sandbox_use_restricted_python: bool = field(
-        default_factory=lambda: os.getenv("SANDBOX_USE_RESTRICTED_PYTHON", "true").lower() == "true"
-    )
-
-    # Error recovery settings
-    max_llm_retries: int = field(
-        default_factory=lambda: int(os.getenv("MAX_LLM_RETRIES", "3"))
-    )
-    retry_backoff_base: float = field(
-        default_factory=lambda: float(os.getenv("RETRY_BACKOFF_BASE", "2.0"))
-    )
-    max_execution_retries: int = field(
-        default_factory=lambda: int(os.getenv("MAX_EXECUTION_RETRIES", "3"))
     )
 
 

@@ -1,6 +1,6 @@
-"""RLM - Recursive Language Models Implementation"""
+"""RLM - Recursive Language Models Implementation (Paper-aligned minimal)"""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 from .rlm import RLM, RLMResult
 from .config import Config
@@ -10,9 +10,6 @@ from .errors import (
     ExecutionError,
     LLMError,
     SubCallLimitError,
-    SandboxError,
-    ContextTooLargeError,
-    ParseError
 )
 
 __all__ = [
@@ -24,7 +21,4 @@ __all__ = [
     'ExecutionError',
     'LLMError',
     'SubCallLimitError',
-    'SandboxError',
-    'ContextTooLargeError',
-    'ParseError',
 ]
